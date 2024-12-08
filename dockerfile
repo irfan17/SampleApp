@@ -1,24 +1,24 @@
-# Base image https://hub.docker.com/u/rocker/
+# Use the official R Shiny image as the base
 FROM rocker/shiny:latest
 
-# system libraries of general use
-## install debian packages
-RUN apt-get update -qq && apt-get -y --no-install-recommends install \
-    libxml2-dev \
-    libcairo2-dev \
-    libsqlite3-dev \
-   libmariadbd-dev \
-    libpq-dev \
-    libssh2-1-dev \
-    unixodbc-dev \
+# Update system packages and install R packages
+RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
-    libssl-dev
+    libxml2-dev \
+    libssl-dev \
+    && apt-get clean
 
-## update system libraries
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean
+# Install R packages required for the app
+RUN R -e "install.packages(c('shiny', 'ggplot2'), repos='https://cloud.r-project.org')"
 
-# copy necessary files
-## app folder
-COPY app.R /srv/shiny-server/app/
+# Copy the app to the container
+COPY app.R /srv/shiny-server/
+
+# Set permissions
+RUN chown -R shiny:shiny /srv/shiny-server
+
+# Expose the default Shiny port
+EXPOSE 3838
+
+# Start the Shiny server
+CMD ["/usr/bin/shiny-server"]
